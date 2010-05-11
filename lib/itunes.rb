@@ -9,6 +9,14 @@ module ITunes
 			@itunes = WIN32OLE::new( 'iTunes.Application' )
 		end
 
+		def each_playlist
+			playlists.each do |list|
+				yield list.extend( Playlist )
+			end
+		end
+
+	private
+
 		def playlists
 			pls = @itunes.LibrarySource.Playlists
 			pls.extend Playlists
@@ -21,19 +29,44 @@ module ITunes
 			count
 		end
 	end
+
+	module Playlist
+		def kind
+			k = self.Kind
+			return k if k == 1
+
+			special_kind
+		end
+
+		def special_kind
+			begin
+				self.SpecialKind
+			rescue WIN32OLERuntimeError
+				nil
+			end
+		end
+
+		KINDS = {
+			0 => :PLAYLIST,
+			1 => :LIBRARY,
+			2 => :DJ,
+			3 => :PODCAST,
+			6 => :MUSIC,
+			7 => :MOVIE,
+			8 => :TV,
+			11 => :GENIUS,
+		}
+		def to_symbol( kind_code )
+			KINDS[kind_code]
+		end
+	end
 end
 
 if __FILE__ == $0 then
 	begin
 		itunes = ITunes::App::new
-		pls = itunes.playlists
-		pls.each do |list|
-			print "#{list.name}: #{list.kind} - "
-			begin
-				puts list.SpecialKind
-			rescue WIN32OLERuntimeError
-				puts 'no special kind'
-			end
+		itunes.each_playlist do |list|
+			puts "#{list.name}: #{list.to_symbol( list.kind )}"
 		end
 	rescue WIN32OLERuntimeError
 		$stderr.puts $!
