@@ -62,6 +62,15 @@ module ITunes
 		def count
 			self.Tracks.Count
 		end
+
+		def each_track
+			self.Tracks.each do |track|
+				yield track.extend( Track )
+			end
+		end
+	end
+
+	module Track
 	end
 end
 
@@ -75,9 +84,12 @@ if __FILE__ == $0 then
 		end
 
 		puts
-		puts "Detail of #{first} list"
 		list = itunes.playlist( first )
-		puts "\tCount: #{list.count}"
+		puts "Detail of #{first} list (#{list.count} tracks)"
+		list.each_track do |track|
+			puts "\t#{track.name}: #{track.album} / #{track.artist}"
+			puts "\t\t#{track.location}"
+		end
 	rescue WIN32OLERuntimeError
 		$stderr.puts $!
 		exit
