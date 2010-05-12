@@ -45,6 +45,27 @@ module ITunes
 			end
 		end
 
+		def playlist?; to_symbol( kind ) == :PLAYLIST; end
+		def library?; to_symbol( kind ) == :LIBRARY; end
+		def dj?; to_symbol( kind ) == :DJ; end
+		def podcast?; to_symbol( kind ) == :PODCAST; end
+		def music?; to_symbol( kind ) == :MUSIC; end
+		def movie?; to_symbol( kind ) == :MOVIE; end
+		def tv?; to_symbol( kind ) == :TV; end
+		def genius?; to_symbol( kind ) == :GENIUS; end
+
+		def count
+			self.Tracks.Count
+		end
+
+		def each_track
+			self.Tracks.each do |track|
+				yield track.extend( Track )
+			end
+		end
+
+	private
+
 		KINDS = {
 			0 => :PLAYLIST,
 			1 => :LIBRARY,
@@ -57,16 +78,6 @@ module ITunes
 		}
 		def to_symbol( kind_code )
 			KINDS[kind_code]
-		end
-
-		def count
-			self.Tracks.Count
-		end
-
-		def each_track
-			self.Tracks.each do |track|
-				yield track.extend( Track )
-			end
 		end
 	end
 
