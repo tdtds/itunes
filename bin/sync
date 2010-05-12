@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+#coding:utf-8
+
+#
+# syncing music files with iTunes
+#
+# Copyright (C) 2010, TADA Tadashi <t@tdtds.jp>
+# You can redistribute it and/or modify it under GPL.
+#
+
+$: << '../lib' if $DEBUG
+require 'itunes'
+
+class SyncTunes
+	def initialize
+		begin
+			@itunes = ITunes::App::new
+		rescue WIN32OLERuntimeError
+			raise RuntimeError::new( "couldn't connect to iTunes." )
+		end
+	end
+
+	def default_config
+		Config::new.default( @itunes )
+	end
+end
+
+class Config < Hash
+	def initialize
+		self['dest'] = ''
+		self['playlists'] = []
+		super
+	end
+
+	def default( itunes )
+		self['dest'] = 'F:/Music'
+		itunes.each_playlist do |list|
+			self['playlists'] << list.name.encode( 'UTF-8' ) if list.playlist?
+		end
+		self
+	end
+end
+
+if __FILE__ == $0 then
+	require 'pp'
+	require 'yaml'
+	require 'ya2yaml'
+
+	def err( msg_text, exit_code = nil )
+		$stderr.puts "#$0: #{msg_text}"
+		exit exit_code if exit_code
+	end
+
+	def msg( msg_text )
+		$stderr.puts msg_text if $DEBUG
+	end
+
+	begin
+		app = SyncTunes::new
+		msg 'connecting to iTunes successfully.'
+	rescue RuntimeError
+		err $!.message, -1
+	end
+
+	# putting default configration when no parameters.
+	if ARGV.length == 0 then
+		print app.default_config.ya2yaml
+		exit 0
+	end
+end
