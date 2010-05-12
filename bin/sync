@@ -23,6 +23,11 @@ class SyncTunes
 	def default_config
 		Config::new.default( @itunes )
 	end
+
+	def set_conf( yaml )
+		conf = YAML::load( yaml )
+		@conf = Config::new.set_conf( conf )
+	end
 end
 
 class Config < Hash
@@ -39,12 +44,17 @@ class Config < Hash
 		end
 		self
 	end
+
+	def set_conf( conf )
+		self.update( conf )
+	end
 end
 
 if __FILE__ == $0 then
 	require 'pp'
 	require 'yaml'
 	require 'ya2yaml'
+	require 'pathname'
 
 	def err( msg_text, exit_code = nil )
 		$stderr.puts "#$0: #{msg_text}"
@@ -67,4 +77,7 @@ if __FILE__ == $0 then
 		print app.default_config.ya2yaml
 		exit 0
 	end
+
+	# reading configration from ARGV
+	app.set_conf( Pathname::new( ARGV.shift ).read )
 end
