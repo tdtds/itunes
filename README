@@ -1,0 +1,15 @@
+iTunes Control Library for Windows
+
+Author: TADA Tadashi <t@tdtds.jp>
+License: GPL
+
+lib/itunes.rb
+	Required:
+		Microsoft Windows
+		iTunes
+		Ruby 1.9.1
+
+bin/sync : a command to sync files with iTunes
+	Required:
+		lib/itunes.rb
+		Ya2YAML (gem install ya2yaml)
