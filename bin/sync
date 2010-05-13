@@ -10,6 +10,8 @@
 
 $: << '../lib' if $DEBUG
 require 'itunes'
+require 'yaml'
+require 'ya2yaml'
 
 class SyncTunes
 	def initialize
@@ -21,7 +23,7 @@ class SyncTunes
 	end
 
 	def default_config
-		Config::new.default( @itunes )
+		Config::new.default( @itunes ).ya2yaml
 	end
 
 	def set_conf( yaml )
@@ -52,8 +54,6 @@ end
 
 if __FILE__ == $0 then
 	require 'pp'
-	require 'yaml'
-	require 'ya2yaml'
 	require 'pathname'
 
 	def err( msg_text, exit_code = nil )
@@ -74,7 +74,7 @@ if __FILE__ == $0 then
 
 	# putting default configration when no parameters.
 	if ARGV.length == 0 then
-		print app.default_config.ya2yaml
+		print app.default_config
 		exit 0
 	end
 
