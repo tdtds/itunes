@@ -27,8 +27,7 @@ class SyncTunes
 	end
 
 	def set_conf( yaml )
-		conf = YAML::load( yaml )
-		@conf = Config::new.set_conf( conf )
+		@conf = Config::new.set_conf( YAML::load( yaml ) )
 	end
 end
 
@@ -72,12 +71,12 @@ if __FILE__ == $0 then
 		err $!.message, -1
 	end
 
-	# putting default configration when no parameters.
 	if ARGV.length == 0 then
+		msg 'generating default configration file and putting to stdout.'
 		print app.default_config
 		exit 0
 	end
 
-	# reading configration from ARGV
+	msg 'loading specified configration file.'
 	app.set_conf( Pathname::new( ARGV.shift ).read )
 end
