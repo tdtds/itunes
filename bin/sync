@@ -28,6 +28,7 @@ class SyncTunes
 	end
 
 	def set_conf( yaml )
+		yaml.sub!( /\A\xEF\xBB\xBF/, '' ) # remove BOM added by Windows Notepad.
 		@conf.set_conf( YAML::load( yaml ) )
 	end
 
@@ -104,7 +105,7 @@ if __FILE__ == $0 then
 	end
 
 	msg 'loading specified configration file.'
-	app.set_conf( Pathname::new( ARGV.shift ).read )
+	app.set_conf( open( Pathname::new( ARGV.shift ), 'r:UTF-8', &:read ) )
 
 	msg 'executing sync.'
 	app.sync
