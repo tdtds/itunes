@@ -36,19 +36,31 @@ class SyncTunes
 	end
 
 	def sync
-		pp @conf.list_files( @itunes )
+		list = @conf.list_files( @itunes )
 
-		music_sync if @conf['music_sync']
-		vudeo_sync if @conf['video_sync']
+		music_sync( list ) if @conf['music_sync']
+		vudeo_sync( list ) if @conf['video_sync']
 	end
 
 private
 
-	def music_sync
+	def music_sync( list )
 		mkdir_p( @conf['music_dest'] )
+
+		list.each do |playlist, tracks|
+			tracks.each do |t|
+				src = Pathname::new( t.path )
+				dest_dir = Pathname::new( @conf['music_dest'] ) +
+					t.artist +
+					t.album
+				mkdir_p( dest_dir ) unless dest_dir.exist?
+				dest = dest_dir + src.basename
+				cp( src, dest ) unless dest.exist?
+			end
+		end
 	end
 
-	def video_sync
+	def video_sync( list )
 		mkdir_p( @conf['video_dest'] )
 	end
 end
@@ -77,13 +89,14 @@ class Config < Hash
 	end
 
 	def list_files( itunes )
-		file_spec = Struct::new( 'FileSpec', :name, :album, :path, :modify )
+		file_spec = Struct::new( 'FileSpec', :name, :artist, :album, :path, :modify )
 		list = {}
 		self['playlists'].each do |list_name|
 			tracks = []
 			itunes.playlist( list_name ).each_track do |track|
 				tracks << file_spec::new(
 					track.name,
+					track.artist,
 					track.album,
 					track.location,
 					track.modificationdate )
