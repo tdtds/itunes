@@ -88,7 +88,7 @@ if __FILE__ == $0 then
 	end
 
 	def msg( msg_text )
-		$stderr.puts msg_text if $DEBUG
+		$stderr.puts "#$0: #{msg_text}" if $DEBUG
 	end
 
 	begin
