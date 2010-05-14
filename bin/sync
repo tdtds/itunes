@@ -10,10 +10,13 @@
 
 $: << '../lib' if $DEBUG
 require 'itunes'
+require 'fileutils'
 require 'yaml'
 require 'ya2yaml'
 
 class SyncTunes
+	include FileUtils
+
 	def initialize
 		begin
 			@itunes = ITunes::App::new
@@ -34,6 +37,19 @@ class SyncTunes
 
 	def sync
 		pp @conf.list_files( @itunes )
+
+		music_sync if @conf['music_sync']
+		vudeo_sync if @conf['video_sync']
+	end
+
+private
+
+	def music_sync
+		mkdir_p( @conf['music_dest'] )
+	end
+
+	def video_sync
+		mkdir_p( @conf['video_dest'] )
 	end
 end
 
@@ -107,6 +123,12 @@ if __FILE__ == $0 then
 	msg 'loading specified configration file.'
 	app.set_conf( open( Pathname::new( ARGV.shift ), 'r:UTF-8', &:read ) )
 
-	msg 'executing sync.'
-	app.sync
+	begin
+		msg 'executing sync.'
+		app.sync
+	rescue Errno::ENOENT
+		err $!, -1
+	end
+
+	msg 'done.'
 end
