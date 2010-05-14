@@ -17,17 +17,22 @@ class SyncTunes
 	def initialize
 		begin
 			@itunes = ITunes::App::new
+			@conf = Config::new
 		rescue WIN32OLERuntimeError
 			raise RuntimeError::new( "couldn't connect to iTunes." )
 		end
 	end
 
 	def default_config
-		Config::new.default( @itunes ).ya2yaml
+		@conf.default( @itunes ).ya2yaml
 	end
 
 	def set_conf( yaml )
-		@conf = Config::new.set_conf( YAML::load( yaml ) )
+		@conf.set_conf( YAML::load( yaml ) )
+	end
+
+	def sync
+		pp @conf.list_files( @itunes )
 	end
 end
 
@@ -48,6 +53,23 @@ class Config < Hash
 
 	def set_conf( conf )
 		self.update( conf )
+	end
+
+	def list_files( itunes )
+		file_spec = Struct::new( 'FileSpec', :name, :album, :path, :modify )
+		list = {}
+		self['playlists'].each do |list_name|
+			tracks = []
+			itunes.playlist( list_name ).each_track do |track|
+				tracks << file_spec::new(
+					track.name,
+					track.album,
+					track.location,
+					track.modificationdate )
+			end
+			list[list_name] = tracks unless tracks.empty?
+		end
+		list
 	end
 end
 
@@ -79,4 +101,7 @@ if __FILE__ == $0 then
 
 	msg 'loading specified configration file.'
 	app.set_conf( Pathname::new( ARGV.shift ).read )
+
+	msg 'executing sync.'
+	app.sync
 end
