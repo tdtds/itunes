@@ -38,13 +38,17 @@ end
 
 class Config < Hash
 	def initialize
-		self['dest'] = ''
+		self['music_sync'] = true
+		self['music_dest'] = ''
+		self['video_sync'] = false
+		self['video_dest'] = ''
 		self['playlists'] = []
 		super
 	end
 
 	def default( itunes )
-		self['dest'] = 'F:/Music'
+		self['music_dest'] = 'F:/Music'
+		self['video_dest'] = 'F:/Video'
 		itunes.each_playlist do |list|
 			self['playlists'] << list.name.encode( 'UTF-8' ) if list.playlist?
 		end
