@@ -44,19 +44,51 @@ class SyncTunes
 
 private
 
-	def music_sync( list )
-		mkdir_p( @conf['music_dest'] )
+	def file_list_by_path( path )
+		files = {}
+		Pathname( path ).find do |file|
+			next if file.directory?
+			files[file] = file.mtime.strftime( '%Y/%m/%d %H:%M:%S' )
+		end
+		files
+	end
 
+	def file_list_by_playlist( list )
+		files = {}
 		list.each do |playlist, tracks|
 			tracks.each do |t|
-				src = Pathname::new( t.path )
-				dest_dir = Pathname::new( @conf['music_dest'] ) +
-					t.artist +
-					t.album
-				mkdir_p( dest_dir ) unless dest_dir.exist?
-				dest = dest_dir + src.basename
-				cp( src, dest ) unless dest.exist?
+				file = Pathname::new( t.path )
+				files[file] = t.modify unless files[file]
 			end
+		end
+		files
+	end
+
+	def music_sync( list )
+		mkdir_p( @conf['music_dest'] )
+		dest_files = file_list_by_path( @conf['music_dest'] )
+		src_files = file_list_by_playlist( list )
+
+		# copy new or updated files
+		src_files.each do |src,src_modify|
+			dest_dir = Pathname::new( @conf['music_dest'] ) +
+				src.dirname.dirname.basename +
+				src.dirname.basename
+			mkdir_p( dest_dir ) unless dest_dir.exist?
+			dest = dest_dir + src.basename
+			if dest.exist?
+				if src_modify <= dest_files[dest]
+					dest_files.delete( dest )
+					next
+				end
+			end
+			cp( src, dest )
+		end
+
+		# delete files only in dest
+		dest_files.each do |dest,dest_modify|
+			pp dest
+			dest.delete
 		end
 	end
 
