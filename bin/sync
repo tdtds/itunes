@@ -93,6 +93,7 @@ private
 
 		# delete files only in dest
 		dest_files.each do |dest,dest_modify|
+			next if /\.(?:m3u|pls)$/ =~ dest.to_s
 			dest.delete
 		end
 	end
