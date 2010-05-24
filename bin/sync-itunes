@@ -39,12 +39,12 @@ class SyncTunes
 		list = @conf.list_files( @itunes )
 
 		if @conf['music_sync']
-			music_sync( list )
-			music_make_playlist( list )
+			music_sync( list ) {|hint| yield hint }
+			music_make_playlist( list ) {|hint| yield hint }
 		end
 
 		if @conf['video_sync']
-			video_sync( list )
+			video_sync( list ) {|hint| yield hint }
 		end
 	end
 
@@ -94,12 +94,14 @@ private
 					next
 				end
 			end
+			yield [:copy, dest]
 			cp( src, dest )
 		end
 
 		# delete files only in dest
 		dest_files.each do |dest,dest_modify|
 			next if /\.(?:m3u|pls)$/ =~ dest.to_s
+			yield [:delete, dest]
 			dest.delete
 		end
 	end
@@ -107,6 +109,7 @@ private
 	def music_make_playlist( list )
 		dest = Pathname::new( @conf['music_dest'] )
 		list.each do |playlist, tracks|
+			yield [:playlist, playlist]
 			open( dest + "#{playlist}.m3u", 'w:utf-8' ) do |f|
 				tracks.each do |t|
 					fname = Pathname::new( t.path )
@@ -177,7 +180,16 @@ if __FILE__ == $0 then
 	end
 
 	def msg( msg_text )
-		$stderr.puts "#$0: #{msg_text}" if $DEBUG
+		$stderr.puts "#$0: #{msg_text}".encode( Encoding::default_external ) if $DEBUG
+	end
+
+	def progress( op, msg )
+		if $DEBUG
+			puts "(#{op}) #{msg}".encode( Encoding::default_external )
+		else
+			print '.'
+			puts if op == :finish
+		end
 	end
 
 	begin
@@ -198,7 +210,8 @@ if __FILE__ == $0 then
 
 	begin
 		msg 'executing sync.'
-		app.sync
+		app.sync {|hint| progress( *hint ) }
+		progress( :finish, '' )
 	rescue Errno::ENOENT
 		err $!, -1
 	end
