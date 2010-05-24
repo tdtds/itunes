@@ -61,9 +61,11 @@ private
 
 	def file_list_by_playlist( list )
 		files = {}
+		ext = Regexp::new( "\.(?:#{@conf['music_ext']})$" )
 		list.each do |playlist, tracks|
 			tracks.each do |t|
 				file = Pathname::new( t.path )
+				next if ext !~ file.to_s
 				files[file] = t.modify unless files[file]
 			end
 		end
@@ -76,9 +78,7 @@ private
 		src_files = file_list_by_playlist( list )
 
 		# copy new or updated files
-		ext = Regexp::new( "\.(?:#{@conf['music_ext']})$" )
 		src_files.each do |src,src_modify|
-			next if ext !~ src.to_s
 			dest_dir = Pathname::new( @conf['music_dest'] ) +
 				src.dirname.dirname.basename +
 				src.dirname.basename
