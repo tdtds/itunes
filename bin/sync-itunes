@@ -8,7 +8,7 @@
 # You can redistribute it and/or modify it under GPL.
 #
 
-$: << '../lib' if $DEBUG
+$:.unshift( '../lib' ) if $DEBUG
 require 'itunes'
 require 'fileutils'
 require 'yaml'
@@ -39,12 +39,12 @@ class SyncTunes
 		list = @conf.list_files( @itunes )
 
 		if @conf['music_sync']
-			music_sync( list )
-			music_make_playlist( list )
+			music_sync( list ) {|hint| yield hint }
+			music_make_playlist( list ) {|hint| yield hint }
 		end
 
 		if @conf['video_sync']
-			video_sync( list )
+			video_sync( list ) {|hint| yield hint }
 		end
 	end
 
@@ -61,9 +61,11 @@ private
 
 	def file_list_by_playlist( list )
 		files = {}
+		ext = Regexp::new( "\.(?:#{@conf['music_ext']})$" )
 		list.each do |playlist, tracks|
 			tracks.each do |t|
 				file = Pathname::new( t.path )
+				next if ext !~ file.to_s
 				files[file] = t.modify unless files[file]
 			end
 		end
@@ -76,26 +78,30 @@ private
 		src_files = file_list_by_playlist( list )
 
 		# copy new or updated files
-		ext = Regexp::new( "\.(?:#{@conf['music_ext']})$" )
 		src_files.each do |src,src_modify|
-			next if ext !~ src.to_s
 			dest_dir = Pathname::new( @conf['music_dest'] ) +
 				src.dirname.dirname.basename +
 				src.dirname.basename
 			mkdir_p( dest_dir ) unless dest_dir.exist?
 			dest = dest_dir + src.basename
 			if dest.exist?
-				if src_modify <= dest_files[dest]
-					dest_files.delete( dest )
+				begin
+					if src_modify <= dest_files[dest]
+						dest_files.delete( dest )
+						next
+					end
+				rescue ArgumentError
 					next
 				end
 			end
+			yield [:copy, dest]
 			cp( src, dest )
 		end
 
 		# delete files only in dest
 		dest_files.each do |dest,dest_modify|
 			next if /\.(?:m3u|pls)$/ =~ dest.to_s
+			yield [:delete, dest]
 			dest.delete
 		end
 	end
@@ -103,6 +109,7 @@ private
 	def music_make_playlist( list )
 		dest = Pathname::new( @conf['music_dest'] )
 		list.each do |playlist, tracks|
+			yield [:playlist, playlist]
 			open( dest + "#{playlist}.m3u", 'w:utf-8' ) do |f|
 				tracks.each do |t|
 					fname = Pathname::new( t.path )
@@ -173,7 +180,16 @@ if __FILE__ == $0 then
 	end
 
 	def msg( msg_text )
-		$stderr.puts "#$0: #{msg_text}" if $DEBUG
+		$stderr.puts "#$0: #{msg_text}".encode( Encoding::default_external ) if $DEBUG
+	end
+
+	def progress( op, msg )
+		if $DEBUG
+			puts "(#{op}) #{msg}".encode( Encoding::default_external )
+		else
+			print '.'
+			puts if op == :finish
+		end
 	end
 
 	begin
@@ -194,7 +210,8 @@ if __FILE__ == $0 then
 
 	begin
 		msg 'executing sync.'
-		app.sync
+		app.sync {|hint| progress( *hint ) }
+		progress( :finish, '' )
 	rescue Errno::ENOENT
 		err $!, -1
 	end
