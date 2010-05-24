@@ -76,7 +76,9 @@ private
 		src_files = file_list_by_playlist( list )
 
 		# copy new or updated files
+		ext = Regexp::new( "\.(?:#{@conf['music_ext']})$" )
 		src_files.each do |src,src_modify|
+			next if ext !~ src.to_s
 			dest_dir = Pathname::new( @conf['music_dest'] ) +
 				src.dirname.dirname.basename +
 				src.dirname.basename
@@ -121,8 +123,10 @@ class Config < Hash
 	def initialize
 		self['music_sync'] = true
 		self['music_dest'] = ''
+		self['music_ext'] = 'mp3|m4a'
 		self['video_sync'] = false
 		self['video_dest'] = ''
+		self['video_ext'] = 'mp4'
 		self['playlists'] = []
 		super
 	end
