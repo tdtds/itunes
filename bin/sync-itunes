@@ -85,8 +85,12 @@ private
 			mkdir_p( dest_dir ) unless dest_dir.exist?
 			dest = dest_dir + src.basename
 			if dest.exist?
-				if src_modify <= dest_files[dest]
-					dest_files.delete( dest )
+				begin
+					if src_modify <= dest_files[dest]
+						dest_files.delete( dest )
+						next
+					end
+				rescue ArgumentError
 					next
 				end
 			end
