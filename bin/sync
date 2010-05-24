@@ -38,8 +38,14 @@ class SyncTunes
 	def sync
 		list = @conf.list_files( @itunes )
 
-		music_sync( list ) if @conf['music_sync']
-		vudeo_sync( list ) if @conf['video_sync']
+		if @conf['music_sync']
+			music_sync( list )
+			music_make_playlist( list )
+		end
+
+		if @conf['video_sync']
+			video_sync( list )
+		end
 	end
 
 private
@@ -88,6 +94,20 @@ private
 		# delete files only in dest
 		dest_files.each do |dest,dest_modify|
 			dest.delete
+		end
+	end
+
+	def music_make_playlist( list )
+		dest = Pathname::new( @conf['music_dest'] )
+		list.each do |playlist, tracks|
+			open( dest + "#{playlist}.m3u", 'w:utf-8' ) do |f|
+				tracks.each do |t|
+					fname = Pathname::new( t.path )
+					f.puts( fname.dirname.dirname.basename +
+						fname.dirname.basename +
+						fname.basename )
+				end
+			end
 		end
 	end
 
