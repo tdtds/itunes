@@ -87,7 +87,6 @@ private
 
 		# delete files only in dest
 		dest_files.each do |dest,dest_modify|
-			pp dest
 			dest.delete
 		end
 	end
