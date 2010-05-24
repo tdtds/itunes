@@ -9,7 +9,18 @@ lib/itunes.rb
 		iTunes
 		Ruby 1.9.1
 
-bin/sync : a command to sync files with iTunes
+bin/sync-itunes : a command to sync files with iTunes
 	Required:
 		lib/itunes.rb
 		Ya2YAML (gem install ya2yaml)
+
+	Usage:
+		1st time:
+			C:\bin> ruby sync-itunes > conf.txt
+
+			Edit conf.txt with text editor (ex. notepad),
+			choice playlists you need to sync and
+			change music_dest to path of your device.
+
+		2nd time or later:
+			C:\bin> ruby sync-itunes conf.txt
