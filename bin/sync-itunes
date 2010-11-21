@@ -187,7 +187,7 @@ if __FILE__ == $0 then
 		if $DEBUG
 			puts "(#{op}) #{msg}".encode( Encoding::default_external )
 		else
-			print '.'
+			print op.to_s[0,1].upcase
 			puts if op == :finish
 		end
 	end
